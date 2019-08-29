@@ -3,8 +3,7 @@ import json
 import cherrypy
 import redis
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
+from constants import REDIS_HOST, REDIS_PORT
 
 class StockHound:
     @cherrypy.expose
@@ -14,10 +13,13 @@ class StockHound:
     @cherrypy.expose
     def stock_data(self, data_date=None):
         redis_db = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+        all_dates = redis_db.lrange('available_days', 0, redis_db.llen('available_days'))
         if data_date is None:
-            all_dates = redis_db.lrange('available_days', 0, redis_db.llen('available_days'))
             # For the latest date. Since dates are stored in YYYYMMDD, max gives us that.
             data_date = max(all_dates)
+        else:
+            # TODO (29 Aug 2019 sam): Ensure that the data date exists here
+            pass
         stock_codes = redis_db.lrange(data_date, 0, redis_db.llen(data_date))
         response = {'data_date': data_date.decode('utf-8'), 'stocks': []}
         for code in stock_codes:
@@ -28,7 +30,6 @@ class StockHound:
             stock['high'] = float(stock['high'])
             stock['close'] = float(stock['close'])
             response['stocks'].append(stock)
-        # response = response.decode('utf8').replace("'", '"')
         return json.dumps(response)
 
 

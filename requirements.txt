@@ -1,0 +1,4 @@
+CherryPy==18.1.2
+beautifulsoup4==4.6.0
+redis==3.3.8
+requests==2.21.0

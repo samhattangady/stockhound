@@ -6,11 +6,11 @@ from bs4 import BeautifulSoup
 import redis
 import requests
 
+from constants import REDIS_HOST, REDIS_PORT
+
 BHAVCOPY_LINK = 'https://www.bseindia.com/markets/MarketInfo/BhavCopy.aspx'
 EQUITY_HTML_ID = 'ContentPlaceHolder1_btnhylZip'
 CENTURY_PREFIX = '20'
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
 
 def main(zipfile_url=None):
     """
