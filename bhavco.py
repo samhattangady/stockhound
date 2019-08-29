@@ -1,5 +1,6 @@
 import csv
 import io
+import os
 import zipfile
 
 from bs4 import BeautifulSoup
@@ -20,7 +21,7 @@ def main(zipfile_url=None):
     zipfile_url (str): URL to zipfile of particular data. If blank,
     we get the latest url posted to bhavcopy.
     """
-    redis_db = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+    redis_db = redis.from_url(os.environ.get("REDIS_URL"))
     if zipfile_url is None:
         zipfile_url = get_latest_zipfile_url()
     data_date = get_date_from_url(zipfile_url)

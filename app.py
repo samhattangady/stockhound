@@ -1,4 +1,5 @@
 import json
+import os
 
 import cherrypy
 import redis
@@ -12,7 +13,7 @@ class StockHound:
 
     @cherrypy.expose
     def stock_data(self, data_date=None):
-        redis_db = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+        redis_db = redis.from_url(os.environ.get("REDIS_URL"))
         all_dates = redis_db.lrange('available_days', 0, redis_db.llen('available_days'))
         if data_date is None:
             # For the latest date. Since dates are stored in YYYYMMDD, max gives us that.
