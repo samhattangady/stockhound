@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Stockalyser</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@trevoreyre/autocomplete-js/dist/style.css">
+  </head>
+  <body>
+    <div id='app'>
+      <section class='box' id='navbox'>
+        <nav class="level container">
+          <div class="level-item">
+            <h1 class="title has-text-centered has-text-white">
+              StockHound
+            </h1>
+          </div>
+          <div class='level-right'>
+           <div class="level-item">
+             <div class="field has-addons">
+               <p class="control">
+                <autocomplete :search='search_autocomplete'
+                  id='autocomplete_field'
+                  placeholder='Search for a stock'
+                  aria-label='Search for a stock'
+                  auto-select
+                  @submit='show_stock_details'
+                ></autocomplete>
+               </p>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </section>
+      <div class='ticker'>
+        <div class='ticker-text' v-html="ticker_stocks">
+        </div>
+      </div>
+      <section>
+        <div class='container'>
+          <h2 class='is-size-4'> Top Performing Stocks - {{format_date(data_date)}}</h2>
+          <div class="tabs is-right is-boxed">
+            <ul>
+              <li id='top_price' class="is-active"><a v-on:click='get_top_stocks_by_price()'>Highest Close</a></li>
+              <li id='top_gain'><a v-on:click='get_top_gainers()'>Biggest Gainers</a></li>
+              <li id='top_lose'><a v-on:click='get_top_losers()'>Biggest Losers</a></li>
+              <li id='top_volatile'><a v-on:click='get_top_volatile()'>Most Volatile</a></li>
+            </ul>
+          </div>
+          <div v-if="stocks.length==0">
+            <progress class="progress is-medium is-dark" max="100">45%</progress>
+          </div>
+          
+          <div v-else>
+            <table class='table is-striped is-fullwidth'>
+              <thead>
+                <th> Name </th>
+                <th> Open </th>
+                <th> High </th>
+                <th> Low </th>
+                <th> Close </th>
+                <th> Change </th>
+              </thead>
+              <tr v-for='stock in stocks.slice(0, 10)'>
+                <td> {{stock.name}} </td>
+                <td> {{stock.open.toFixed(2)}} </td>
+                <td> {{stock.high.toFixed(2)}} </td>
+                <td> {{stock.low.toFixed(2)}} </td>
+                <td> {{stock.close.toFixed(2)}} </td>
+                <td v-if='stock.close > stock.open' class='has-text-success'>
+                  <span class="icon">
+                    <i class="fas fa-chevron-up"></i>
+                  </span>
+                  {{get_percent_change(stock)}} %
+                </td> 
+                <td v-else-if='stock.close == stock.open'>
+                  <span class="icon">
+                    <i class="fas fa-chevron-right"></i>
+                  </span>
+                  {{get_percent_change(stock)}} %
+                </td> 
+                <td v-else class='has-text-danger'>
+                  <span class="icon">
+                    <i class="fas fa-chevron-down"></i>
+                  </span>
+                  {{get_percent_change(stock)}} %
+                </td> 
+              </tr>
+            </table>
+          </div>
+          <div v-show='show_modal'>
+            <!-- FIXME (29 Aug 2019 sam): Escape key not working to close -->
+            <div class='modal' id='stock-data-modal' v-on:keydown.esc='close_modal()'>
+              <div class="modal-background" v-on:click='close_modal()'></div>
+              <div class='modal-content'>
+                <div class='card'>
+                  <div class='card-header'>
+                    <div class='card-header-title is-centered is-size-3'>
+                      {{selected_stock.name}}
+                    </div>
+                  </div>
+                  <div class='card-content'>
+                    <div class="columns is-centered">
+                      <div class="column is-narrow">
+                        <table class='table is-centered'>
+                          <thead>
+                            <th> Code </th>
+                            <th> Open </th>
+                            <th> High </th>
+                            <th> Low </th>
+                            <th> Close </th>
+                            <th> Change </th>
+                          </thead>
+                          <tr>
+                            <td> {{selected_stock.code}} </td>
+                            <td> {{selected_stock.open}} </td>
+                            <td> {{selected_stock.high}} </td>
+                            <td> {{selected_stock.low}} </td>
+                            <td> {{selected_stock.close}} </td>
+                            <td v-if='selected_stock.close > selected_stock.open' class='has-text-success'>
+                              <span class="icon">
+                                <i class="fas fa-chevron-up"></i>
+                              </span>
+                              {{get_percent_change(selected_stock)}} %
+                            </td> 
+                            <td v-else-if='selected_stock.close == selected_stock.open'>
+                              <span class="icon">
+                                <i class="fas fa-chevron-right"></i>
+                              </span>
+                              {{get_percent_change(selected_stock)}} %
+                            </td> 
+                            <td v-else class='has-text-danger'>
+                              <span class="icon">
+                                <i class="fas fa-chevron-down"></i>
+                              </span>
+                              {{get_percent_change(selected_stock)}} %
+                            </td> 
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="modal-close is-large" aria-label="close" v-on:click='close_modal()'></button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="footer">
+        <div class="content has-text-centered">
+          <p>
+          <strong>StockHound</strong> by <a href="https://samhattangady.com">samhattangady</a>. Data obtained from <a href='https://www.bseindia.com/markets/MarketInfo/BhavCopy.aspx'>bhavcopy</a>. Source code on <a href='https://github.com/samhattangady/stockhound'>github</a>.
+          </p>
+        </div>
+      </footer>
+    </div>
+  </body>
+  
+  <script src="https://unpkg.com/@trevoreyre/autocomplete-vue"></script>
+
+  <script>
+  var app = new Vue({
+    el: '#app',
+    data: {
+      message: 'Hello Vue!',
+      stocks: [],
+      top_stocks: [],
+      data_date: '',
+      stock_names: [],
+      selected_stock: {}, 
+      show_modal: false,
+      ticker_stocks: '',
+    },
+    components: {
+      Autocomplete
+    },
+    methods: {
+      get_stocks_data: function() {
+        axios.get('/stock_data')
+          .then((response) => {
+            this.stocks = response.data.stocks
+            this.get_ticker_data(this.stocks)
+            this.data_date = response.data.data_date
+            this.get_top_stocks_by_price()
+            this.stock_names = this.stocks.map(stock => stock.name)
+        })
+      },
+      get_ticker_data(stocks) {
+        this.ticker_stocks = '' 
+        stocks.forEach((stock) => {
+          let change = this.get_percent_change(stock)
+          if (change >= 0) {
+            this.ticker_stocks += '<span class="green-text">'
+            this.ticker_stocks += stock.name+ 'UP  ' +
+              change+'%</span>&nbsp;&nbsp;&nbsp;&nbsp;'
+          } else {
+            this.ticker_stocks += '<span class="red-text">'
+            this.ticker_stocks += stock.name+ 'DOWN  ' +
+              change+'%</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+          }
+        })
+      },
+      deselect_all_tabs() {
+        let tab_ids = ['top_price', 'top_gain', 'top_lose', 'top_volatile']
+        this.show_modal = false
+        tab_ids.forEach((tab) => {
+          document.getElementById(tab).classList.remove('is-active');
+        })
+      },
+      set_active_tab(tab_id) {
+        this.deselect_all_tabs()
+        document.getElementById(tab_id).classList.add('is-active');
+      },
+      get_top_stocks_by_price: function() {
+        this.stocks.sort(function(a, b) {
+          return (b.close) - (a.close)
+        })
+        this.set_active_tab('top_price')
+      },
+      get_top_gainers: function() {
+        this.stocks.sort(function(a, b) {
+          return ((b.close-b.open) - (a.close-a.open))
+        })
+        this.set_active_tab('top_gain')
+      },
+      get_top_losers: function() {
+        this.stocks.sort(function(a, b) {
+          return (b.open-b.close) - (a.open-a.close)
+        })
+        this.set_active_tab('top_lose')
+      },
+      get_top_volatile: function() {
+        this.stocks.sort(function(a, b) {
+          return Math.abs((b.close-b.open)/b.close) - Math.abs((a.close-a.open)/a.close)
+        })
+        this.set_active_tab('top_volatile')
+      },
+      get_percent_change: function(stock) {
+         return ((stock.close-stock.open)/stock.close*100).toFixed(2);
+      },
+      format_date(data_date) {
+        if (data_date == '') {
+          return ''
+        }
+        let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        let year = data_date.slice(0, 4)
+        let month = parseInt(data_date.slice(4, 6)) - 1;
+        let day = data_date.slice(6, 8)
+        return day+' '+months[month]+', '+year
+      },
+      search_autocomplete(input) {
+        if (input.length < 1) { return [] }
+        let options = [];
+        return this.stock_names.filter(function(stock) {
+          return stock.toLowerCase().includes(input.toLowerCase())
+        })
+      },
+      show_stock_details(result) {
+        this.stocks.forEach((stock) => {
+          if (stock.name == result) {
+            this.show_modal = true
+            this.selected_stock = stock
+            document.getElementById('stock-data-modal').classList.add('is-active')
+            return
+          }
+        })
+      },
+      close_modal() {
+        document.getElementById('stock-data-modal').classList.remove('is-active')
+        document.getElementById('autocomplete_field').value = ''
+        this.selected_stock = {}
+      }
+    },
+    created: function() {
+      this.get_stocks_data();
+    }
+  })
+  </script>
+  <style>
+  @keyframes slide {
+    from { left:100%; transform: translate(0, 0); }
+    to { left: -100%; transform: translate(-100%, 0); }
+  }
+  @-webkit-keyframes slide {
+    from { left:100%; transform: translate(0, 0); }
+    to { left: -100%; transform: translate(-100%, 0); }
+  }
+  .ticker {
+    background:#222;
+    width:100%;
+    height:30px;
+    line-height:30px;
+    overflow:hidden;
+    position:relative;
+    margin-top: -24px;
+    margin-bottom: 20px;
+  }
+  .ticker-text {
+    position:absolute;
+    top:0;
+    white-space: nowrap;
+    height:14px;
+    font-size:14px;
+    animation-name: slide;
+    animation-duration: 10000s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    -webkit-animation-name: slide;
+    -webkit-animation-duration: 10000s;
+    -webkit-animation-timing-function:linear;
+    -webkit-animation-iteration-count: infinite;
+  }
+  .green-text {
+    color: #2e2;
+  }
+  .red-text {
+    color: #e22;
+  }
+  #navbox {
+    background-color: hsl(217, 71%, 53%);
+  }
+  </style>
+</html>
