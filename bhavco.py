@@ -101,6 +101,9 @@ def download_zip_and_extract_csv(zip_url):
     str: csv file contents as a string
     """
     zipfile_response = requests.get(zip_url)
+    if not response.ok:
+        raise RuntimeError(f'There was an issue with getting response to url {zip_url}')
+    # TODO (29 Aug 2019 sam): Improve error checks here.
     with zipfile.ZipFile(io.BytesIO(zipfile_response.content)) as zip_contents:
         with zip_contents.open(zip_contents.namelist()[0]) as csv_contents:
             return csv_contents.read()
