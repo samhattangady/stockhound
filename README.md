@@ -1,8 +1,25 @@
-# Bhavcopy Scraper
+# StockHound
 
-A python script that gets the latest bhavcopy available, and scrapes the data to store on redis.
+A simple app to view the top stocks of the given day. The project has two components:
 
-### Redis schema
+`bhavco.py`: A python script that gets the latest bhavcopy available, and scrapes the data to store on redis.
+
+`app.py`: A web app that serves a VueJs frontend that allows us to view the scraped data.
+
+## Basic Features
+1. On the landing page, we can view the top 10 stocks by closing price on a given day.
+2. We can also sort the stocks by largest gain, largest loss or largest volatility.
+3. We can search for stocks and see the basic details of that stock for that day.
+4. The script is designed to run once a day and update to the latest data.
+
+### Future Features and Improvements
+1. Change the date of data being viewed. It is being stored, but no way to access it on the front end.
+2. Allow users to view longer term performance of a stock after they search for it (with graph).
+3. Add links to view more data for given stock on some other site.
+
+---
+
+###### Redis schema
 
 To design the redis schema, a basic usecase for the app was decided. The app will currently show
 the details of the top stocks on any given day. Moving forward, the app will also get the functionality
