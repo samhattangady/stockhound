@@ -1,5 +1,7 @@
 # StockHound
 
+[Visit app](http://stockhound.samhattangady.com)
+
 <img src='https://i.imgur.com/CHpWVP5.png' /> <img src='https://i.imgur.com/66syfLA.png' />
 
 A simple app to view the top stocks of the given day. The project has two components:
