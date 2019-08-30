@@ -1,5 +1,7 @@
 # StockHound
 
+<img src='https://i.imgur.com/CHpWVP5.png' /> <img src='https://i.imgur.com/66syfLA.png' />
+
 A simple app to view the top stocks of the given day. The project has two components:
 
 `bhavco.py`: A python script that gets the latest bhavcopy available, and scrapes the data to store on redis.
@@ -23,7 +25,7 @@ A simple app to view the top stocks of the given day. The project has two compon
 
 #### Assumptions and Decisions
 1. The assignment did not specify how many days data is to be stored/shown. So for this version, I am
-storing multiple days data, but showing just one. The app can easily be extended for more, its mostly
+storing multiple days data, but showing just one at a time. The app can easily be extended for more, its mostly
 a UI/UX problem.
 2. The web app was designed for desktop monitors. On mobiles, there is a lot of overflow which doesn't
 look all that great. Also, it was developed for Chrome, and uses some ES6 features.
