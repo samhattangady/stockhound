@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Stockalyser</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <!--<script src="https://cdn.jsdelivr.net/npm/vue"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
@@ -42,7 +43,19 @@
       </div>
       <section>
         <div class='container'>
-          <h2 class='is-size-4'> Top Performing Stocks - {{format_date(data_date)}}</h2>
+          <div class='page-header'>
+            <div class='top-stocks is-size-4'>
+               Top Performing Stocks
+            </div>
+            <div class="select" >
+              <select v-model='data_date'>
+                <option disabled value="">Please select date</option>
+                <option v-for='d in all_dates' v-bind:value='d'>
+                  {{format_date(d)}}
+                </option>
+              </select>
+            </div>
+          </div>
           <div class="tabs is-right is-boxed">
             <ul>
               <li id='top_price' class="is-active"><a v-on:click='get_top_stocks_by_price()'>Highest Close</a></li>
@@ -51,7 +64,7 @@
               <li id='top_volatile'><a v-on:click='get_top_volatile()'>Most Volatile</a></li>
             </ul>
           </div>
-          <div v-if="stocks.length==0">
+          <div v-if="stocks_loading">
             <progress class="progress is-medium is-dark" max="100">45%</progress>
           </div>
           
@@ -174,20 +187,45 @@
       stock_names: [],
       selected_stock: {}, 
       show_modal: false,
+      stocks_loading: true,
       ticker_stocks: '',
+      all_days_stocks: {},
+      all_days_tickers: {},
+      all_dates:[],
     },
     components: {
       Autocomplete
     },
     methods: {
-      get_stocks_data: function() {
-        axios.get('/stock_data')
+      get_stocks_data: function(data_date) {
+        if (data_date in this.all_days_stocks) {
+          console.log(data_date, 'exists')
+          console.log(this.all_days_stocks)
+          this.stocks = this.all_days_stocks[data_date]
+          // TODO (30 Aug 2019 sam): Have get/fetch logic for tickers also
+          this.ticker_stocks = this.all_days_tickers[data_date]
+          this.resort_selected_option()
+          this.stock_names = this.stocks.map(stock => stock.name)
+        } else {
+          console.log(data_date, 'fetching')
+          console.log(this.all_days_stocks)
+          this.fetch_stocks_data(data_date);
+        }
+      },
+      fetch_stocks_data: function(data_date) {
+        this.stocks_loading = true;
+        axios.get('/stock_data', { params: {data_date: data_date}})
           .then((response) => {
             this.stocks = response.data.stocks
-            this.get_ticker_data(this.stocks)
+            this.all_dates = response.data.all_dates
             this.data_date = response.data.data_date
-            this.get_top_stocks_by_price()
+            this.get_ticker_data(this.stocks)
+            this.all_days_tickers[this.data_date] = this.ticker_stocks
+            this.all_days_stocks[this.data_date] = this.stocks
+            this.resort_selected_option()
             this.stock_names = this.stocks.map(stock => stock.name)
+            this.stocks_loading = false;
+            console.log(this.all_days_stocks);
         })
       },
       get_ticker_data(stocks) {
@@ -204,6 +242,23 @@
               change+'%</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
           }
         })
+      },
+      resort_selected_option() {
+        // Resort the stocks based on the active tab
+        // TODO (30 Aug 2019 sam): See if there is a cleaner way to do this
+        if (document.getElementById('top_gain').classList.contains('is-active')) {
+            this.get_top_gainers()
+            return
+        }
+        if (document.getElementById('top_lose').classList.contains('is-active')) {
+            this.get_top_losers()
+            return
+        }
+        if (document.getElementById('top_volatile').classList.contains('is-active')) {
+            this.get_top_volatile()
+            return
+        }
+        this.get_top_stocks_by_price()
       },
       deselect_all_tabs() {
         let tab_ids = ['top_price', 'top_gain', 'top_lose', 'top_volatile']
@@ -278,8 +333,16 @@
       }
     },
     created: function() {
-      this.get_stocks_data();
-    }
+      this.fetch_stocks_data();
+    },
+    watch: {
+      data_date: function(new_date, old_date) {
+        if (old_date == '') {
+          return
+        }
+        this.get_stocks_data(this.data_date);
+      }
+    },
   })
   </script>
   <style>
@@ -324,6 +387,12 @@
   }
   #navbox {
     background-color: hsl(217, 71%, 53%);
+  }
+  .page-header {
+    display: flex;
+  }
+  .top-stocks {
+    margin-right: 30px;
   }
   </style>
 </html>

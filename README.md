@@ -12,12 +12,12 @@ A simple app to view the top stocks of the given day. The project has two compon
 3. We can search for stocks and see the basic details of that stock for that day.
 4. The script is setup to run once a day and update to the latest data.
 5. Stock ticker to view data of all the stocks.
+6. Change the date of data being viewed.
 
 ### Future Features and Improvements
-1. Change the date of data being viewed. It is being stored, but no way to access it on the front end.
-2. Allow users to view longer term performance of a stock after they search for it (with graph).
-3. Add links to view more data for given stock on some other site.
-4. Improve the ticker scrolling. It gets a little janky at times.
+1. Allow users to view longer term performance of a stock after they search for it (with graph).
+2. Add links to view more data for given stock on some other site.
+3. Improve the ticker scrolling. It gets a little janky at times.
 
 ---
 
